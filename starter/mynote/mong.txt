@@ -1,0 +1,274 @@
+compare to sql
+collections are tables
+documents are rows
+fileds are column
+
+data store in BSON format 
+the data is on (bson)format like json but typed
+
+document can containe embedded document in some fileds 
+(in sql must make another table)
+
+max size of document is 16mbyte
+unique id that define each documet genarated by data type 
+///////////////////////
+run serverdb
+*create folder data and other folder in it db
+*in cmd put path\mongod
+// start mongo server and we need to connect to it to manipulate db from another cmd ,shell
+//mong server start on waiting for connnection port....
+*another cmd put path \mongo (where you put cmd for mongo)to start type commandes for db
+//we connect automaticly to the same port 
+
+how use :
+==>the mongo server must be running in a cmd or shell and 
+then you can type commands for creating databases
+
+//enter mongo shell or cmd//path of the mongo.exe in your dir 
+-path\mongo
+
+
+-use natours-test
+//switched to db natours-test 
+//switch name of db 
+
+
+-db.tours.insertMany()
+//db.collectionsname.to put docs inside collection
+exp : db.tours.insertOne({name:"the forest",price:297,rating : 4.7 })
+
+
+-db.tours.find()
+//check data in tours
+
+-show
+//all dbs in that we have in thers some that mongodb created 
+
+-show collection
+//extcuted in db to show collection in that specific db
+
+-quit
+//exit from mongo shell
+
+-mongo 
+//you must enter againg with
+
+
+exercice: insert docs 
+-mongo
+-use natours-test
+-db.tours.insertMany([
+    {name:"sea explorer",price:"449",rating:"4.8"},
+    {name:"the show advanture",price:"350",rating:"4.8",difficulty:"easy"},
+    {name:"khniss",price:"400",rating:"4.8",},
+    {name:"khniss",price:"350",rating:"4.8"}])
+db.tours.fing()
+//give you object or documents inside of the collection and add a unique field for the id 
+
+
+
+
+/////////////////querring data from db
+
+db.tours.find({name:"the forest hiker"})
+//get the tours from the colldection with that name 
+
+
+db.tours.find({difficulty:"easy"})
+
+
+db.tours.find({price:{$lte:500}})
+//lte stands for less then
+//return docs with price less then 500
+
+//two serch quertirya(and)
+db.tours.find({price:{$lt:500}, rating :{$gt:4.8}} )
+
+//or
+//less than 500 or greater than 
+//$or operator accept an arry 
+db.tours.fin({$or:[{price:{$lt:500}},{rating:{$gt:4.8}}]})
+//price gthen 500 or the rating gthen 4.8
+db.tours.find({$or:[{price:{$gt:500}},{rating:{$gt:4.8}}]})
+
+//project one field of the objects(docs) the name with the id (generated automaticly)
+db.tours.find({$or:[{price:{$gt:500}},{rating:{$gt:4.8}}]},{name:1})
+
+
+/////////////////////updating data from db
+
+
+//use filter object {name:"the snow adventure"}
+//and operator (set operator ($set)
+-acced to the db
+-mongo 
+-use natours-test
+-db.tours.updateOne({name:"the Snow Adventure"},{$set :{price:597}})
+// this update one doc 
+//to update many doc
+-db.tours.updateMany()
+//find tours with price gthen 500 and rating gthen 4.8
+db.tours.find({price:{$gt:500},rating:{$gt:4.8}})
+
+//adding filed premium to docs that match the condition
+db.tours.updateMany({price:{$gt:500},rating:{$gt:4.8}},{$set:{premium: true}})
+
+//replace  docs
+db.tours.replaeOne(serch query,the new data)
+db.tours.replaceOne({name: "the sea adventure"} ,{define an entire doc})
+db.tours.replaceOne({price:{$gt:600}},{name:"..",price:..,difficulty:"...",premium:"..."})
+
+////////////////////// delet data from db
+//delete one (for one doc match the query )
+//delete many (for all doc that match the query)
+db.tours.deleteMany({price:{$gt:500}})//object filter refer to price gthen 500dt
+db.tours.deleteMany({rating:{$lt:4.7}})//object filter refer to rating less then 4.7
+//=>show the number of documents deleted
+//deleteall
+db.tours.deleteMany({})//condition to match all object
+
+
+
+
+///////////////////////////data base on could
+use a remot db hosted in Atlas
+Atlas is db service provider
+use hosted db from the beginng without use local db
+
+-create an account 
+-new project
+-create new cluster(instance of db)
+-make a connection to that instance of db
+(ip@ and user and a password )
+-put these config in conig.env file
+(DATABASE_PASSWORD=password (in the connection of the cluste)
+-connection method mongodb compass (garaphical interface)
+//the connection that we use in composs is for manipulate db that run in local server on port 27..
+//create a new connection with the url of the remote db with compass 
+////////////////////////
+db pass from atlas
+DATABASE_PASSWORD=ZNgHtMxQbVPxLMz1
+
+db = mongodb+srv://Mohamedamie04:<password>@myfirstcluster.edrnz.mongodb.net/myFirstDatabase?retryWrites=true&w=majority
+//////////////
+/////////////////////////////
+connect your app to local db
+//////////////////
+in config.env: add the link to Atlas db or to your local db
+
+//for the remote db add this to link to the remote db in Atlas db provider
+DATABASE = ........//..<password>......../natrous?
+
+//for the db in localhost(localserver) 
+//make sur that the process mongod is running in the shell waiting for connection
+//mongodb server is running in the local server and waiting for connection
+
+//in the config.env
+DATABASE_LOCAL=mongodb//localhost:27017/natours
+//for conncting to the mongoserver for manipulate data in mongodb data base 
+////////////// mongo db driver (mongose)
+add mongodb driver for make interaction between node code and the database
+allow node code to access to owr db and interact to mongodb data base
+
+
+////////////////////////////////////////////////////////////
+mongodb db with express app 
+//////////////////////////////////////////
+how connect app with atlas 
+install mongodb driver (mongoose)
+1/npm i mongoose
+mongoose = require('mongoose')
+2/connect to remote db
+mongoose.connect(connection string in config.envn,{this object containe prop for dublicate warning})
+const DB = process.env.DATABASE.replace('<password>',process.env.DATABASE_PASSWORD)
+exp/connect to remote db 
+//this object contain prop used for duplication warinning
+ mongoose.connect(DB,{
+    useNewUrlParser: true,
+    useCreateIndex:true,
+    useFindandModify:false
+})
+.then(con=>{
+    console.log(con.connections)
+    console.log('db connection successfull');
+})
+/////////////////////////////////connect to local data base
+mongoose.connect(process.env.DATABASE_LOCAL,{
+    useNewUrlParser: true,
+    useCreateIndex:true,
+    useFindandModify:false
+})
+.then(con=>{
+    console.log(con.connections)//to see connections
+    console.log('db connection successfull');}
+)
+*mongoose .connect return promise (handel error )
+
+
+
+
+//////////
+what is mnogoose
+/////////
+is an (odm)object data modeling library for mongodb and node js 
+provide a higher level of abstraction
+==>way to interact with data base with js code
+-give us some fonctionnalities(features) for simple devolopment
+-features of mongoose :(shemas to model data ,easy validation ,simple query api,middleware)
+-mongoose shema : discribe the structure of the data,default val etc 
+-mongoose model: wrapper for the schema ,provide an interface for the db for crud operations
+create shema and make a model 
+
+//////////
+creating schema and model 
+////////////
+model blue print of creating a document (object)
+create model in mongoose to create a document (object)from it and perform crud operations  
+model are created out of mongoose schema
+///schema exemple:
+const tourSchema = mongoose.Scheam({
+    name:{
+        type:String,
+        required:[true,'a tour must have a name ']
+    },
+    premium:String 
+    rating : {type : number, 
+    default: 4.5},
+     price:
+     {
+         type :number,
+         required:true
+     }  
+
+})
+////model 
+model out of the shema that we make 
+const Tour = mongoose.model('Tour',tourSchema)
+
+////
+creating doc from the model and testing
+//////
+*make an instance of the Tour model and fill these fields
+const tourTest = new Tour({
+name :"the forest hiker"
+rating:4.8
+price:497 
+}
+/tourtest is an insance of tour model 
+/we can applie mehtod exist in model on tourtest object for interact with data base
+
+tourTest.save()
+*this will save in Tour collection in data base 
+*return promise that we consume with async await
+*tourTest.save().then(doc=>console.log(doc)).catch(err=>console.log(err))
+==>log the object from the data base with his unique id 
+
+
+cc:
+make a schema :sturcture of data 
+model:is  classe or collection that collect document (reference of these document)
+-create collection from model and pass the schema 
+model is like a classe that have methode to interact with data base 
+create a document =>instance of the model 
+each docs inharit model mehtod to make crud operation on docs
+

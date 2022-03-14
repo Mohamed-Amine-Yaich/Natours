@@ -1,0 +1,39 @@
+MVC
+model :appliction data, business logic
+controller : handel app request and interact with model send response to client application logic
+view : presentation logic
+
+
+-request hit a router (tourrouter,userrouter)
+-router sent request to the handler fonction in controller
+(tourcontroller,usercontroller)
+-controllers interact with model to retrive data from data base or
+create new document (each resources have a model file (tourModel, userModel))
+-after retrive data from the model we can send response containe that data 
+
+to render a website  
+controller select one template of the view and inject data into it 
+
+////////////////////////
+application logic
+//////////////////////
+controller
+app implementation 
+manage request and response
+bridge between model and view layer 
+technical aspects of an app
+////////////////////////
+business logic
+//////////////////////
+solve business problem 
+creating a new tour 
+cheking password
+validating input data
+
+////////////
+fat models /thin contrller
+///////////
+try as much to offlad much logic as possible into the models and keep the 
+controllers as simple and lean as possible
+
+controller for managing app request and responses 

@@ -1,0 +1,49 @@
+
+
+
+run a middel ware before the save documents in data base or after the saving
+called (pre , postHokes) define a function that run before or after certain event
+=>ex: saving a document in db
+
+*4 type of middelware in mongoose:
+documents
+query
+aggregate
+model
+
+documetns :
+act on the currently process document
+//code in model
+middelware = hooks
+middelware can run before and after certain event like creating or saving a document
+in case of document middelware the event is usallay the save event(save or create ) not incude findbyidandupdate or insertmany
+in pre middelware we can have access to the doc with this
+in post we have access in the callback function to the doc that been saved
+
+
+query :
+process query
+-this refer to the query that we have (Tour.find({}))  then we can chaine another find method
+the query that we created is chained to the querys that we have (apifeatures )
+query middelware :  run a function before or after a certain query is executed
+pre find hook : middelware gonna run before a find query is executed
+
+=>we uset to hide secret tours
+==>querys are chained together the awaited
+filter
+sort
+fields
+paging
+query middleware :Tour.find({})
+qurey took 14 milliseconds !
+
+for the post find hooks : the query is alrady done we can get access to the document
+that the query give
+
+
+in our example of secret tour  secret tour cannot be find by method that containe find
+but still can be found by aggregation
+tour.find==>we handel secret tour(query for the tours with secrettour false)
+tour.aggregate ==>adding a match stage with a match query for secrettour not equal to true
+aggregation middelware :
+add hooks or middelware before or after an aggregation

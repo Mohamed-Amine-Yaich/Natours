@@ -1,0 +1,47 @@
+//for send email we need transporter , define email options , send email
+//transporter is the service that will send the email (not node js ) exp : gmail
+//can send with multiple services like gmail , yahoo , hotmail
+//not good for production up use mailgun,SendGrid
+
+
+==>mailtrap :mail are traped in a dev inbox to see how they look
+fake sending to clients
+//*)use mailtrap :as dev service for fake send  emails to real adress (they are trapt in a dev inbox)
+//we use a special develpoment service which fake to send email to real address
+//but these email are trapped in a development inbox for take a look how they will look later
+//in production
+
+1)specify credentials mailtrap in transporter
+
+EMAIL_USERNAME
+PASSWORD
+hot
+
+==>forget password
+-pass email
+-check if there is a user with this mail else throw err
+-generate with crypt the reset token and save the encrypted reset token in db with
+expiration time of the reset token (10min)
+-prepere the message of the email with the route where you will change the password
+and send the token as params in the route
+-send email with node mailer (specify the service and pass the options (message,email :user.mail))
+try sending mail else create error and send it to the global handler
+
+==>rest password
+-use the route in the mail with the token
+-encrypte the mail and test if there is a user with this email token and the expiration date is greater than
+the time of the request of
+code  : await User.findOne({restToken:hashedToken ,resetTokenExpire : {gt: Date.now()}}
+
+ -user.password = req.body.password
+ -user.passwordConfirm = req.body.passwordConfirm
+ - restToken = undefined
+ -resetTokenexpire =undefined
+
+user.save()
+-******
+use save after changing password cause run all the validator (update not )
+and the pre save middleware function (pre save hooks that we use for encrypting the pass)
+
+const token = asynToken(user._id)
+

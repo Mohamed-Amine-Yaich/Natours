@@ -1,0 +1,51 @@
+
+-validator :
+put in the schema field to validate certain condition
+the value are in the right format (type) given by the document schema
+and the required are fill with data
+-validation in model file (fat model_thin controller)
+
+*there are a built in validator like required for required field in schema  and all type
+*unique in not a validator
+ validator are run when we create or update a tour if we set it to true
+post methode :
+*string validator: max lenght,minlenght ,exp:maxlength:[number ofcarcter ,'validation text for error']
+update(patch):
+*in update we set run validator to true to rerun validator
+
+validator used frequently
+*enum for strings
+*min and max used for date
+
+custom validator :
+built own validator : use the  validate prop
+exemple : validate :function() or arrow function (depend if you need this variable)
+the function has access to the inputted value
+
+custom validator in the pricediscount field
+validate : function(val){
+ return true or false
+ //specify the condition base on other field
+   val < this.price
+}
+this property in priceDiscount field
+custom validator with message :
+validate :{
+      validator :  function(val){
+        return val < this.price ;
+
+
+      },
+      message: 'the priceDiscount must be less then the price of the tour'
+
+    }
+  //or without message
+  validate :  function(val){
+          return val < this.price ;
+
+        },
+
+*use external library to confirm validation :
+only on string
+validator github
+==> exp :validate: [validator.isAlpha,'name must containe only caracters']

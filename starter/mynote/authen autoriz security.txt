@@ -1,0 +1,249 @@
+authentication and authorization is about signing up and login into app
+to access certain part of our app  to make it more secure
+
+to implement authentication we use json web token (jwt)
+
+1)user model implementation
+2)creating new user signup
+
+4)managing password
+4-1)validate the confirmed password:
+validate confirmed password by a collback function that take (use function not arrow for using this)
+--this refer to the object that you are creating
+code :
+passwordConfirm :
+validate:{
+    validator:funcion(value of the confirmed pass:val ){
+        return  val === this.password},
+    message:'confirm the password'
+}
+
+//
+**plain password is not best solution for storing must encrypt
+--best place of encryption password is in model (dealing with data) fat model thin controller
+
+4-2)mongoose document middleware (for encrypting the document before save in db)
+using pre saving middleware hooks to hash or encrypt data  (using becrypt )
+use pre save middleware on the Userschema
+
+bcryptjs  (add a random string to password )=>two equal password not generate the same hash
+==>even when you put the same password for two user the hashing will give different passwords
+code :
+//use mongoose middelware pre save hook to encrypt data in the database
+//next() to call the next middleware
+//pre the saving the callback function will be executed
+userSchema.pre('save',async  function(next){
+  //this method on all fields of the object and you can precise a certain one
+  if(!this.isModified('password')) return next();
+
+  //hashing the password (hash method is async )
+  // cost param (define how cpu intensive the process of hashing will be  )
+  this.password = await bcrypt.hash(this.password,12)
+
+  //deleting the confirm field for not saving in data base
+  //this field is for validation then no need for it (make it undefined for not storing in db)
+ //this field is required input but not required to be persisted in db
+  this.passwordConfirm = undefined;
+next()
+})
+/////////////////////////////////
+4-3) authentication with jwt
+*)jwt for authentication
+many authen method are there but we use jwt (modern , simple , secure)
+-jwt :statless solution for authentication (no need any session state in the server)
+  this is perfect for restful api (restful api shloud be stateless)
+jwt(without a session state)
+*)session for authentication:
+store state using session
+==>alternative of jwt is to store the user login state on server using session
+
+using session state is not recommended  in rest api
+
+====>how jwt authentication works
+client =>server :login (email, password)
+server :  (if user && password exist ) *create unique jwt using secret string that *
+server =>client :send it to client and   stored in cookie or localstorage
+client =>server : request data in some route
+*server:verify if valid JWT and allow access
+server=>client :send response to the request(requested data)
+or send that his not allowed to access this resources
+the protocol in use is https for security
+
+==>creating and verify the jwt
+creating :
+header :meta data
+payload :data that can encode in the token
+signature : created with (header+payload +secret)
+1)(header +payload) + secret(that is saved on the server) => generate a signature
+2)same (header + payload)+ signature = JWT
+
+==>user logged in when he receive his jwt
+each time the user went to access to protect route he send his JWT along with req
+to verify
+
+verify :
+jwt : (header + payload)+ signature = JWT
+1)take the signature of the JWT that request data
+2)generate a test signature :
+take (header and play load ) of the JWT and use the secret string
+stored in server to generate a test signature
+for comparing the with the  signature of the JWT(that come with req)
+3) if test signature === signature ==> authenticated
+**header and payload can be modified and this provide error in comparing
+*without the secret no one will be able to manipulate the JWT data
+
+//////////////////////////////////////
+signing up users:
+authorization and authentication by some library
+-will implement :login,protecting ,authorization logic (except signing and verifycation that handel by JWT)
+
+6)signup users
+signup and automatic login send a jwt to the user
+6-1)steps
+take the requested fields of the schema
+validate the requested fields
+use document middelware to save encrypted data and remove the confirmation password
+save
+return data with no password cause it not selected
+
+
+
+
+7)logging in users(base on email and password)
+-concept of loggin like to sign a jwt and send it to client
+-in this case we issue get the token when the user exist the password is correct
+
+7-1)login steps
+-take email and pass from body
+else create an error and send it with next
+-get object and his pass with that unique email
+compare if !(user and password compartion)=>create error
+-create jwt with the user._id as param and send it
+
+
+
+**)instance methods applie on document
+any variable result of querying user model is a user document
+for comparing the two data we use instance method (correct password)
+=>correctPassword (x,y) return bcrypt.compare(x,y) (in model)
+then use it on the object user for comparing the in the login
+
+
+
+////////////////////////////////////////////8-protecting route
+
+creating of middel ware bfore getting all tours
+in this middleware you
+
+
+////////////////////////9-protecting route
+code
+exports.protect = catchAsync(async(req,res,next)=>{
+//1)chek if there is a token
+let token ;
+  if(req.headers.authorization && req.headers.authorization.startsWith('bearer'))
+{
+   token = req.headers.authorization.split(' ')[1]
+}
+//console.log(token)
+  if(!token){return next (new appError('you are not log in please log in ',401))}
+//2)verification token
+//(token, secret , callback)//we change the callback with promisify for promise
+ //return the id or paylod
+  //2type of error when can produce invalid token or expired token
+  const decoded = await promisify(jwt.verify)(token,process.env.JWT_SECRET)
+  console.log("decoded :"+decoded)
+//3)chek if user still exists mean while
+  //when user send request if it is not in db then throw erro
+  //user has been removed from db after he got the token then
+  //he still got the right to get data based on that token
+  //this for verify he is not still saved in the data base then send error
+  //that there is not longer user for this token
+const freshUser = await User.findById(decoded.id)
+if(!freshUser){return next(new appError('there is no longer user that belong to this token',401))}
+
+//4)check if user change password after the token was issued ()
+//this for changing the token when the password change for more security
+
+
+next()
+})
+/////////////:10 -advanced postman
+
+
+set an envirement variables in post man to take the token from the response and 
+put it in the dev natrous variables
+pm.environment.set("jwt", pm.response.json().token);//test post man
+then 
+go to authorizationinin request of the  protected route(get all tour)
+
+
+
+//////////////////////////////////////////////////////////// -11-authorization users and permission
+==>authentication is not enough ( sign up and log in  )
+=> need to authorization to distangue users
+authenticated : log in (taarif )
+authorization : for knowing the  user and what he is authorized to do (which resources can get access)
+(tasrii7)
+
+==>per
+add another middelware that take role that will be authorized to perform this action
+exemple:
+for deleting a tour 
+-you must login or sign up to get authenticated and get token 
+-token is stored in environment variables (post man)
+-then we can protect any route adding  a protect middleware before any route handler
+-for authorization or authorizaing we add a third middlware between the protect and the route handler
+to identify the role of the login user
+*pass the user data in the protected route for the next middlew ware in the request 
+to use the role of that current user that we have verify in the protected function 
+
+=>req.user  = current user
+code :
+====>the tourroute:
+=>.delete(
+    authController.protect , authController.restrictTo('admin','lead-guide') ,
+    tourcontroller.deletetour
+  );
+==>authorization middleware :
+//...roles :(table for roles that have permission to perform this request)
+exports.restrictTo = (...roles) => {
+  return (req, res, next) => {
+    //test if role of current useris inculde in the roles tables
+    //or the current user is passed in the req in the protect middleware(req.user =currentuser)
+    if (!roles.includes(req.user.role))
+      return next(
+        new appError('your do not have permission to perfor this action  ', 403)//status code forbidden
+      );
+ 
+  next()
+    };
+
+};
+
+
+
+
+
+//////////////////////////////////////////12)reset password ()
+common pocudure that when you want to reset password you need to 
+set your email and then send you an email to take you to a page when you 
+need to type the new password
+1)post request to a route (forget password route) with the email of the user
+this will create a reset token (not jwt) and send to email @
+2)the user send that token from his email along with the password to update his password
+
+---forget password : app send token to your email 
+---reset password : receive the token and the new password
+
+1)reset password part1 : 
+1)take email from the body and verify if there is a user (findone({email : req.body.email})
+2)generate resetToken (with instance method) :
+generete token , encrypt token to save it in db , presice when the reset token expired 
+(save there the expired and the encrypted resettoken in db)
+3) retrun the reset token to send in email
+
+
+///////////send mail with nodemailer
+install:npm i nodemailer
+create an email handler function in utils :email.js

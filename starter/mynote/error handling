@@ -1,0 +1,183 @@
+////////////////////////
+debugging node with ndb:
+///////////////////////
+can use vs code for debugging node
+or ndb node debugger that  is  npm package
+fundamental aspect of debugging is to set break point
+stop program from running and see all fvariable
+
+local variable:5 var of the function that we write code in ,app var from express other ...
+global variable :where environment var are stored (that we defined in config.env and other env var)
+ contain process variables (var evert where)
+
+-the code stop in the each break point
+
+/////////////////////////////////////////////////////////////////////////
+2type of error:
+///////////////operational errors:
+problem that se can predict to happen at some point so we just need to handel them in advence
+-validator
+failed to connect to server , to db , req timeout  ...
+
+//////////////////programming errors:
+
+bugs that we developers intorduce into our code
+coding and syntax error
+reding prop that is undefind
+passing some thing where anther thing is expected
+using await withoout async
+
+////////////////////////handling  operational error///////////////////////
+==>handling error is handling the operational errors
+send all error to a (central error handling middleware) so that we can send the response back
+to the client letting them know what happend
+
+//////////////central error handing middleware
+==>the best solution is to have a central error handling middleware away of controller and model so
+that  can decide what to do with error
+
+error that will placed in the (central error handiling middelware)
+--hitting url that doesn't exist is an operational middleware
+-snippets that handel error of different router handler
+
+express  come with error middleware or  middleware handler:
+error handler middleware :
+app.use(middleware funcion:(err,req,res,next)=>{})
+
+
+//////////creating error and send it to globel err handler middleware:
+
+//1/create an error in this middleware precise message,statuscode,status
+//pass the err in the next method of middleware to send it to the globle handler middleware
+app.all('*',(req,res,next)=>{
+  const err = new Error( `can't find ${req.originalUrl} on this server`)
+  err.statusCode = 404;
+  err.status= 'fail';
+  next(err);
+
+})
+//2/then will passe it to the globale error handler middleware with the next() methode
+//express error handler middleware
+//globle handler middleware
+app.use((err,req,res,next)=>{
+  err.statusCode = err.statusCode || 500;//500 :bad server
+  err.status = err.status || 'error';
+
+  res.status(err.statusCode).json({
+    status : err.status,
+    message : err.message
+
+
+  })
+
+})
+////////////creating error class
+this class extend from the built in Error class
+built in class constructor accept only message of the error(super(message))
+
+
+///stack
+will show us the error and the entire call stack that is originated in the error
+
+///////////////////////:how to make the error and handle
+//make an error creeating class to create an object error we pass the massage and statuscode
+//send this error to the global error handler middleware placed in error constroller
+
+
+
+/////////////////////////////////catchasync function
+role : catch our async error
+we pass a function  in catchasync
+-when we hit the route and prcise the method we call the catch async
+the catchasync function take the async function as a param
+and return another function that affected to the route handling method of the controller
+***this method is what will be called by express need to have req,res, and next for pass the error
+
+
+cc:
+exports.createTour=(res,res,next){ fn(req,res,next).catch(err =>next(err)}
+this method will call  the function that we pass in the catchasync and execute code in it
+the function that been called by the returned function is fn that is  an async function
+that return promise if it not resolved it will give an error
+so we chain a catch method to the fn function
+and pass the err in the next method to the global error handler
+
+
+//////:code
+//declare the catchasync function
+const catchasync = (fn) =>{
+ return (req,res,next)=>{  fn( req,res,next).catch(err => next(err))
+ //function retured assyned to the method  that express will call when hit the route
+ }
+
+}
+//use of the catchasync
+ exports.createtour = catchasync(async (req, res,next) => {
+
+    const newTour = await Tour.create(req.body);
+
+    res.status(201).json({
+      status: 'sucess',
+      data: {
+        tour: newTour,
+      },
+    });
+
+})
+
+
+////error that need to be operational error
+3 mongoose error that need to set operational
+
+if error is not created with our class then it is not operational
+3 error in mongoose that we need to set operational
+
+ 1)wrong id in the find method(handle invalid database id)
+=>need to set operational
+
+2)duplicated fields
+creation of a new tour with same name as someone in the db
+-this error is not created so it will shown in prod mode
+a message (something go so wrong )
+=>need to set as operational error
+
+3) validation error
+also must be set to operational error
+
+cc: in this section
+we set all db connection error to operational error
+(validator,duplication, unvalid id )
+there are other error outside  mongoose or express
+/////////////////////////////////////////////////////////////////////////////////////////:
+///////////////////:error outside of express//unhandled promise rejections
+do not occur inside express
+like a data base connection fail(db is down , cannot log in )
+--change the  password of db give an unhandled promise
+wi-- give a deprecation warning
+for unhandled rejections we resolve it globaly by creating an event listenner
+porcess.on('unhandledRejection',err=>{})
+
+code :
+==>this solotion to close the server and close
+/event listener for handling promise rejection
+process.on('unhandledRejection',err=>{
+  console.log(err.name,err.message)
+  //MongoServerError bad auth : Authentication failed
+  //close the server bfore exit for ending the pening request
+ server.close(()=>{  process.exit(1);
+ })
+
+})
+///////////////////////////catching uncaught exception(console.log(x))
+bugs or error  of code
+***when console.log(x) in middleware the error whent to global error handel middleware
+shout putted before any code execution in the app
+bugs that occur in synrcronus  code and not handled  anywere called uncaught  exception
+exemple console something that does not exist
+
+cc:need to catch these error in place dont relay on these to event listener(chaine catch method in the connection with data base
+
+
+note :  uncaught exception middelware are not catched by the listener cause middleware send them to the global
+error handler how know that there are not operational  so display the message (something whent very wrong)
+==>not handled bay the listener
