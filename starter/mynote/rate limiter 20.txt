@@ -1,0 +1,28 @@
+///////////
+rate limiter is to prevent two type :
+  -danger denial of service attack(dos) : keep sending to the server till break down and the app become unavailable
+  -brutel force attack :trying  million and million of password to guess the right one
+
+*)how works the rate limiter : counting the request comming from one ip address if there are many request block these request
+
+==>use a global middleware
+//in globle middleware in the app file
+install express-rate-limit :package from npm
+require and use the rateLimit function and pass an object of  option
+in this object specify the max,the windowMs,message(if depasse the max the the defined interval)
+
+exemple :
+//define the rate limit funciton that recieve an object  of option
+//specify how many request per ip in certain amount of time
+//max request from the same ip is 100 in 1 hour in ms
+//the max must adapt on the app
+const limiter  = rateLimit({
+  max : 100,
+  windowMs :1* 60 * 60 * 1000,
+  message  : 'too many request from this IP , please try again in an hour'
+})
+app.use('/api',limiter)
+
+//if you depass the max of request=>the request will be blocked and return
+return the message that you defined in the object ,satuscode :429 :too many request
+

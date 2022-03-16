@@ -1,31 +1,75 @@
 const fs = require('fs');
 //require the module express//express function in app object
 const express = require('express');
-//const morgan = require('morgan');
+const morgan = require('morgan');
 //import error creation class
-const appError = require('./utils/appError');
-//import global handler from error contoller
-const globalErrorHandler = require('./controllers/errorController');
+const rateLimit = require('express-rate-limit')
+const helmet =require('helmet')
+const  mongoSanitize = require('express-mongo-sanitize')
+const xss = require('xss-clean')
 
-//import router of user and tour (routes and routes handlers )
-const tourRouter = require('./routes/tourroutes');
+const appError = require('./utils/appError');
+const globalErrorHandler = require('./controllers/errorController');//import global handler from error contoller
+const tourRouter = require('./routes/tourroutes');//import router of user and tour (routes and routes handlers )
 const userRouter = require('./routes/userroutes');
 
 //you run  the server , use express function to
 const app = express();
 
-////////////////////////////://1)middelware
-/*
-if(process.env.NODE_ENV===development){//for the loggin happen in dev mode not in production
+////////////////////////////://1) global middelware
+
+//set security HTTP headers
+//before any other middlware
+app.use(helmet())
+
+//Dev logging
+if(process.env.NODE_ENV==='development'){//for the loggin happen in dev mode not in production
     app.use(morgan('dev')) }
-*/
-app.use(express.json()); //midelwhere/to pass data in the body of request
-/*
-//express.json() call a funtion that added to middelware stack
-//middelware for static file
+
+
+
+//limit request from the same API (ip adress)
+//define the rate limit funciton that recieve an object  of option
+//specify how many request per ip in certain amount of time
+//max request from the same ip is 100 in 1 hour in ms
+//the max must adapt on the app
+const limiter  = rateLimit({
+  max : 100,
+  windowMs :1* 60 * 60 * 1000,
+  message  : 'too many request from this IP , please try again in an hour'
+})
+app.use('/api',limiter)
+
+//body parser, reading data from body into req.body
+//middleware to pass data in the body of request
+//we can limit the amount of data that pass in body the size of data must not depass 10kb
+app.use(express.json({limit : '10kb'}));
+
+//data sanitization against NoSql query injection
+// possibility to log in without an email @ with query injection
+// set email field to "email ": { "$gte":""} cause this is always true
+//install another middleware function(npm i express-mongo-sanitize)
+//mongoSanitize is a function when we call retrun middleware function that we can use
+//filter out the $ sign and dots from the query string the req.params req.body =>by removing them these operator will never work
+//this will run a problem of type cause when we try to inject query we pass an object or email type is string => this err in res
+app.use(mongoSanitize())
+
+
+//data sanitization against xss(npm i xss-clean)
+//clean user input from malicious html code
+//insert  html code with some js code attach to it
+//add some validation in your schema protect from cross-site-scripting on server side
+//convert html balise that attacker try to put in any field to an entity
+//"<div id='badcode>Name</div>"  with xss==>"&lt;div id='badcode>Name&lt;/div
+//validator function library  has couple sanitization function in it can built some middleware using these funcion
+//also mongoose enforce a strict schema when encounter something weird throw err
+app.use(xss())
+
+//serving static files
+// middelware for static file
 app.use(express.static(`${__dirname}/public/`))
 
-*/
+
 ///middelware for test the header
 app.use((req, res, next) => {
   console.log('show headers for jwt :');
@@ -33,6 +77,13 @@ app.use((req, res, next) => {
 
   next(); //to excute the next middelware
 });
+
+//test middleware
+app.use((req,res,next)=>{
+  req.requestTime = new Date().toString();
+  next();
+})
+
 
 /*
 //create own middelware app.use(nameof middelwarefunction) to add to middelware stack

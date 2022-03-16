@@ -7,12 +7,12 @@ const bcrypt = require('bcryptjs');
 const userSchema = mongoose.Schema({
   name: {
     type: String,
-    required: [true, 'Please tell us your name'],
+    required: [true, 'Please tell us your name']
   },
   role: {
     type: String,
     enum: ['user', 'admin', 'guide', 'lead-guide'],
-    default: 'user',
+    default: 'user'
   },
 
   email: {
@@ -23,7 +23,7 @@ const userSchema = mongoose.Schema({
     //convert email to lowercase
     //use validator package from npm tovalidate email
     //validator.validate("test@email.com")(from npm )
-    validate: [validator.isEmail, 'Please provide a valid email'],
+    validate: [validator.isEmail, 'Please provide a valid email']
   },
   photo: String,
   //path of photo
@@ -33,29 +33,47 @@ const userSchema = mongoose.Schema({
     type: String,
     required: [true, 'Please provide a password'],
     minLength: 8,
-    select: false, //for not show when we get data
+    select: false //for not show when we get data
   },
   passwordConfirm: {
     type: String,
     required: [true, 'Please confirm password'],
     // this only works on CREATE and SAVE method!!!! (veryf model method)
     validate: {
-      validator: function (val) {
+      validator: function(val) {
         return val === this.password;
       },
-      message: 'passwords not the same',
-    },
+      message: 'passwords not the same'
+    }
   },
   passwordChangedAt: {
     type: Date,
-    default: Date.now(),
+    default: Date.now()
   },
   passwordRestToken: String,
   passwordRestExpires: Date,
+  active: {
+    type: Boolean,
+    default: true,
+    select: false
+  }
 });
 
+//use query middleware to get only active users
+//regular expression look for string that start or end with find
+userSchema.pre(/^find/,function(next) {
+ //this points to the current query
+  this.find({active :{$ne : false}})
+
+  next()
+})
+
+
+
+
 //use mongoose document middelware
-userSchema.pre('save', async function (next) {
+//pre  save middle for bcrypt  the password
+userSchema.pre('save', async function(next) {
   //run the function when the password field is modified
   if (!this.isModified('password')) return next();
 
@@ -68,16 +86,16 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
-
-userSchema.pre('save',function(next) {
-  if( !this.isModified('password') || this.isNew )return next()
+//pre save middle to change passwordchangeat
+userSchema.pre('save', function(next) {
+  if (!this.isModified('password') || this.isNew) return next();
 
   //to ensure that the password changed before the creation of the token
   //cause in the rest password we have to resign a token and save when the password change
   //and we can't use a token that been given before the password change cause(protect middleware)
-this.passwordChangedAt = Date.now() - 1000
+  this.passwordChangedAt = Date.now() - 1000;
   next();
-})
+});
 
 
 //creating a instance method that available for all document of user collection
@@ -85,8 +103,7 @@ this.passwordChangedAt = Date.now() - 1000
 //candidate password from the body
 
 
-
-userSchema.methods.correctPassword = async function (
+userSchema.methods.correctPassword = async function(
   candidatePassword,
   userPassword
 ) {
@@ -94,7 +111,7 @@ userSchema.methods.correctPassword = async function (
 };
 
 //instance methode for check password changed
-userSchema.methods.changesPasswordAfter = function (JWTtimestamp) {
+userSchema.methods.changesPasswordAfter = function(JWTtimestamp) {
   if (this.passwordChangedAt) {
     const passwordtimestamp = parseInt(
       this.passwordChangedAt.getTime() / 1000,
@@ -108,7 +125,7 @@ userSchema.methods.changesPasswordAfter = function (JWTtimestamp) {
   return false;
 };
 
-userSchema.methods.createPasswordResetToken = function () {
+userSchema.methods.createPasswordResetToken = function() {
   //instance methods for creating the token (with  crypto  build in module)
   //no need for strong password
   //1-gernerate resettoken

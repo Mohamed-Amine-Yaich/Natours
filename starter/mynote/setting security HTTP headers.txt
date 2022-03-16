@@ -1,0 +1,12 @@
+install helmet
+use a middelware function from npm package : called helmet
+a stander to use this best practices in express
+*)def:
+==>helmet is a collection of multiple middleware (14 smaller middelware function)
+    that set HTTP response headers with
+    running app.use(helmet())
+-not all 14 middelware are active by default some of them is active
+
+==>documentation in guithub tell you how to activate inactive middelware in helmet
+=>set http response headers
+-we use the default option t

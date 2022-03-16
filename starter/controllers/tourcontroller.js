@@ -65,6 +65,8 @@ exports.getalltour = catchAsync(async (req, res,next) => {
 
     //features.query containes all query from all the methodes chained ??
     const tours = await features.query;
+   //return  querys (les requette) chained
+    //const tours  =await Tour.find().find({$match}).sort('-price').paging().skip(skip).limit(limit)
     //3-send response
     res.status(200).json({
       //format data to jsend data specification
@@ -210,7 +212,7 @@ exports.deletetour = catchAsync(async (req, res,next) => {
     });
 
 });
- 
+
 //const tour  = require('')
 //21.aggregation pipeline
 //is a mongo db feature

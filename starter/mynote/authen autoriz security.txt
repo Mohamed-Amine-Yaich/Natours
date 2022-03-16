@@ -171,10 +171,10 @@ next()
 /////////////:10 -advanced postman
 
 
-set an envirement variables in post man to take the token from the response and 
+set an envirement variables in post man to take the token from the response and
 put it in the dev natrous variables
 pm.environment.set("jwt", pm.response.json().token);//test post man
-then 
+then
 go to authorizationinin request of the  protected route(get all tour)
 
 
@@ -189,14 +189,14 @@ authorization : for knowing the  user and what he is authorized to do (which res
 ==>per
 add another middelware that take role that will be authorized to perform this action
 exemple:
-for deleting a tour 
--you must login or sign up to get authenticated and get token 
+for deleting a tour
+-you must login or sign up to get authenticated and get token
 -token is stored in environment variables (post man)
 -then we can protect any route adding  a protect middleware before any route handler
 -for authorization or authorizaing we add a third middlware between the protect and the route handler
 to identify the role of the login user
-*pass the user data in the protected route for the next middlew ware in the request 
-to use the role of that current user that we have verify in the protected function 
+*pass the user data in the protected route for the next middlew ware in the request
+to use the role of that current user that we have verify in the protected function
 
 =>req.user  = current user
 code :
@@ -215,7 +215,7 @@ exports.restrictTo = (...roles) => {
       return next(
         new appError('your do not have permission to perfor this action  ', 403)//status code forbidden
       );
- 
+
   next()
     };
 
@@ -225,21 +225,21 @@ exports.restrictTo = (...roles) => {
 
 
 
-//////////////////////////////////////////12)reset password ()
-common pocudure that when you want to reset password you need to 
-set your email and then send you an email to take you to a page when you 
+//////////////////////////////////////////12)forget and reset password ()
+common pocudure that when you want to reset password you need to
+set your email and then send you an email to take you to a page when you
 need to type the new password
 1)post request to a route (forget password route) with the email of the user
 this will create a reset token (not jwt) and send to email @
 2)the user send that token from his email along with the password to update his password
 
----forget password : app send token to your email 
+---forget password : app send token to your email
 ---reset password : receive the token and the new password
 
-1)reset password part1 : 
+1)reset password part1 :
 1)take email from the body and verify if there is a user (findone({email : req.body.email})
 2)generate resetToken (with instance method) :
-generete token , encrypt token to save it in db , presice when the reset token expired 
+generete token , encrypt token to save it in db , presice when the reset token expired
 (save there the expired and the encrypted resettoken in db)
 3) retrun the reset token to send in email
 
@@ -247,3 +247,36 @@ generete token , encrypt token to save it in db , presice when the reset token e
 ///////////send mail with nodemailer
 install:npm i nodemailer
 create an email handler function in utils :email.js
+////////////////////////////////////////////////reset password :
+-receive the mail and the route of the reset page
+-recuper resettoken from the url
+-encript the rest token and compare it with the passworresettoken  saved in user data in db
+-if there is a user with a passwordresttoken and token is not expired
+-then take the new password and confirmet form the body of the request and the fields of the
+the reset body put them undefined (passwordchangedAt is changed in a pre save middleware)
+- save the user data and log user in via send a new token(createsendtoken)
+
+
+
+
+////////////////////////////////////////////////15)update password of login user
+add new route for updatemy password  and make it protect so only login user can get access
+router.patch('/updatemypassword', authController.protect,authController.updatePassword);
+
+-user must be loged in and authorized (the token is verified )=>user data are send in the request
+-find user by the id (user in the req)
+-compare the current password with password field by the instance method in user model
+if the current is incorrect throw an error
+-set the new password and passwordconfirm
+-await to save the user in db(save return the pre save middlewares(bcrypt,passwordchangeat) and the confirm validator and )
+-createsendtoken(create a jwtoken with the id of the user and send it as a response  )
+
+/////////////////////////////////////16)update current user
+in user controller (user data have no relatoin with authen or autorization)
+- update currently authenticated user (the handler of the route called updateMe)
+
+
+///////////////////////////////delting users
+-add a filds (active) to specify if the user is active or not
+-the method on the route is delete and it is protected only for login user
+-get all user will bring only active users  (using the pre find middllware )

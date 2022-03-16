@@ -1,6 +1,7 @@
 class apiFeatures {
   //query string :req.query
   //query : mongoose query
+
   constructor(query, queryString) {
     this.query = query;
     this.queryString = queryString;

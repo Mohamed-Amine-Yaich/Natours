@@ -16,6 +16,18 @@ const signToken = (id) => {
 
 const createSendToken  = (user,statusCode,res)=>{
   const token  = signToken(user._id)
+  //we not using https we will activate in production
+  const  cookieOptions = {
+    expires : new Date(Date.now() + process.env.JWT_COOKIE_EXPIRES_IN* 24 *60*60*1000),
+   // secure : true,//https on production only
+    httpOnly :true
+    //this mean that cookie cannot be access or modified by the browser
+    //browser will receive the cookie store it and send it along with each request
+  }
+  if(process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+  res.cookie('jwt',token,cookieOptions)
+ //remove the password from the output data of the user
+  user.password =undefined
   res.status(statusCode).json({
     status: 'success',
     token,
@@ -236,18 +248,19 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
 
   user.password = req.body.password;
   user.passwordConfirm = req.body.passwordConfirm;
+  // 3-update changedPasswordAt property for the user
   // this in a middleware pre save    user.passwordChangedAt = Date.now()
   user.passwordRestToken = undefined;
   user.passwordRestExpires = undefined;
   await user.save();
-  // 3-update changedPasswordAt property for the user
-
-  //4-log the user in , send jwt
+  console.log('hello')
+  /*//4-log the user in , send jwt //refactor with the createSendToken
   const token = signToken(user._id);
   res.status(200).json({
     status: 'success',
     token: token,
-  });
+  });*/
+  createSendToken(user,200,res)
 });
 
 //this functionality is for login user

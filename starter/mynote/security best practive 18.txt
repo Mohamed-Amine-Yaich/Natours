@@ -1,0 +1,59 @@
+
+18.best practice for security :
+1)compromised DataBase :
+  encrypt password in data base :
+  password with bcrypt and rest token with sha256
+2)Brute Force Attacks:
+  trying to guess million and million of password to find the correct one
+  we can prevent that with :
+  -use bcrypt (for making login requests slow )
+  -implement rate limiting (express-rate-limiting)limit the number of request comming from a single ip
+  -implement maximum number of login attempts (!!!!!)
+3)cross-site scripting (xss)attacks :
+    where attacker try to inject scripts into our page to run his melechous code ()
+    this allow the attacker to read the local storage =>that's why jwt must not story in local storage
+  *)store JWT in HTTPOnly cookies
+    =>the browser can only receive and send the cookies and can't access or modified any way
+    make it impossible to steal the JWT stored in the cookies
+   *)to prevent (xss) attacks in the backend side : should sanitize user input data and
+    set special HTTP headers (helmet package) make these attacks more difficult to happend
+    =>use middleware to set these headers
+4)Denial -of service(dos)attack
+attacker keep sending request to the server till break down and the app become unavailabele
+  -implement the rate limiting (epress rate limit)
+  -limit body payload(inbody-parser)(number of data send in post or patch request)
+  -avoid evil regular expression(take expenentiel time run for non match input
+  //can make the entire app down)
+5)Nosdl query injection
+    attacker inject query instade of valid data to create query expression that translate to true
+    exp:(login without providing a valid name or password )
+    -use mongoose for mongoDB(because of schema types )=>force to set the correct data type in each field
+    -Sanitize user input data to be more sure
+
+=============> other best practices and suggestions
+1)always use https :
+    any communication between clients and server must be over https otherwise anyone can listen
+    on the conversation and steal the JWT
+2)create password rest tokens with expiry dates(random password tokens not from date)
+3)deny access to JWT after password change
+    (implemented in the protect) =>must log in again
+4)don't commit configuration file in git
+5)don't send the entire error to the client (handel error)
+    stack trace can give the attacker some valuble insite to your systme
+6)prevent cross site request forgery user (csurf packge):(not implement in course)
+    force the user to execute unwanted action with is currently log in ()
+7)re-authentication before a high-value action :(deleting or payment )
+8)implement a blacklist of untrusted JWT :
+    -if some user try to act some malicious  activity we can't log it out but
+     set a blacklist a untrusted token that used by these users to prevent there danger
+9)confirm user email adress after first creating account
+10)refresh tokens :
+    keep user logged in with refresh tokens (complexe and not implemented )
+    no token does not expire
+11)implement two-factor authentication :
+  -after log in must perform a second action to get authenticated
+   by insert a code send to mobile phone
+12)prevent parameter pollution  :
+    insert field parameter in query stringé that cause uncaught execeptions
+
+
